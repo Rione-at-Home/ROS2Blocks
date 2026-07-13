@@ -5,4 +5,6 @@ public abstract class RobotCommand {
     public abstract String getPythonCommand();
 
     public abstract String getDisplayName();
+
+    public abstract char[] getValue();
 }
