@@ -34,8 +34,24 @@ public class RobotUI extends Application {
         btnWait.setOnAction(e -> workspace.addCommand(new BaseCommand("wait", 5)));
 
 
+        // Arm Commands
+        Button btnHome = new Button("Home");
+        btnHome.setOnAction(e -> workspace.addCommand(new ArmCommand("home")));
+
         Button btnPick = new Button("Pick Can");
         btnPick.setOnAction(e -> workspace.addCommand(new ArmCommand("pick_can")));
+
+        Button btnLift = new Button("Lift");
+        btnLift.setOnAction(e -> workspace.addCommand(new ArmCommand("lift")));
+
+        Button btnPlaceLeft = new Button("Place Left");
+        btnPlaceLeft.setOnAction(e -> workspace.addCommand(new ArmCommand("place_left")));
+
+        Button btnPlaceRight = new Button("Place Right");
+        btnPlaceRight.setOnAction(e -> workspace.addCommand(new ArmCommand("place_right")));
+
+        Button btnCatapult= new Button("Catapult");
+        btnCatapult.setOnAction(e -> workspace.addCommand(new ArmCommand("catapult")));
 
         palette.getChildren().addAll(btnForward, btnPick);
 
