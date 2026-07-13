@@ -53,19 +53,50 @@ public class DraggableBlock extends HBox {
     }
 
     private void initDragAndDrop() {
+
+        // Handle clicking palette blocks to spawn and snap them automatically
+        this.setOnMouseClicked(event -> {
+            if (isPaletteTemplate && event.isStillSincePress()) {
+                Workspace workspace = (Workspace) this.getScene().lookup("#workspace");
+                if (workspace != null) {
+                    // Find the bottom-most block in the active script chain
+                    DraggableBlock bottomBlock = workspace.findBottomMostBlock();
+
+                    double spawnX;
+                    double spawnY;
+
+                    if (bottomBlock != null) {
+
+                        Bounds bounds = bottomBlock.getBoundsInParent();
+                        spawnX = bounds.getMinX();
+                        spawnY = bounds.getMaxY() + 1;
+
+                    } else {
+                        spawnX = 350;
+                        spawnY = 100;
+
+                    }
+
+                    DraggableBlock spawned = workspace.spawnCommandAt(command, spawnX, spawnY);
+
+                    if (bottomBlock != null) {
+                        spawned.checkSnapOrTrash();
+                    }
+                }
+                event.consume();
+            }
+        });
+
         this.setOnMousePressed(event -> {
             mouseAnchorX = event.getX();
             mouseAnchorY = event.getY();
 
             if (!isPaletteTemplate) {
                 this.toFront();
-
                 if (targetParent != null) {
                     targetParent.children.remove(this);
                     targetParent = null;
-
                 }
-
             }
         });
 
@@ -91,7 +122,6 @@ public class DraggableBlock extends HBox {
 
                     }
                     event.consume();
-
                 }
                 return;
             }
@@ -106,12 +136,10 @@ public class DraggableBlock extends HBox {
             checkSnapOrTrash();
         });
 
-        // Reset active clone state hook when user lets go of mouse interaction
         this.setOnMouseReleased(event -> {
             if (isPaletteTemplate && activeClone != null) {
                 activeClone.handleMouseReleased();
                 activeClone = null;
-
             }
         });
     }
