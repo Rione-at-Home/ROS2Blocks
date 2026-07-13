@@ -20,6 +20,8 @@ public class Workspace extends Pane {
         this.getChildren().add(trashCan);
 
         DraggableBlock startBlock = new DraggableBlock(new StartBlockCommand(), false);
+        startBlock.setStyle("-fx-background-color: #e6b400; -fx-text-fill: white; -fx-padding: 15; " +
+                "-fx-font-weight: bold; -fx-background-radius: 8;");
         startBlock.setLayoutX(100);
         startBlock.setLayoutY(60);
         this.getChildren().add(startBlock);
