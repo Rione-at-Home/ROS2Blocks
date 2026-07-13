@@ -102,9 +102,49 @@ public class DraggableBlock extends HBox {
         }
     }
 
+    private void checkSnapOrTrash() {
 
+        Workspace workspace = (Workspace) this.getParent();
+        if (workspace == null) return;
 
-    // Handle dropping sequence
+        // Trash Can Collision Zone Check
+        Bounds myBounds = this.getBoundsInParent();
+
+        if (workspace.isOverTrash(myBounds)) {
+            this.setStyle(this.getStyle() + "-fx-opacity: 0.5;");
+            return;
+
+        } else {
+            this.setStyle(this.getStyle().replace("-fx-opacity: 0.5;", ""));
+
+        }
+
+        double snapThreshold = 35.0;
+        for (var node : workspace.getChildren()) {
+
+            if (node instanceof DraggableBlock && node != this && !this.children.contains(node)) {
+                DraggableBlock potentialParent = (DraggableBlock) node;
+                Bounds parentBounds = potentialParent.getBoundsInParent();
+
+                double distanceX = Math.abs(myBounds.getMinX() - parentBounds.getMinX());
+                double distanceY = Math.abs(myBounds.getMinY() - parentBounds.getMaxY());
+
+                if (distanceX < snapThreshold && distanceY < snapThreshold) {
+                    this.setLayoutX(parentBounds.getMinX());
+                    this.setLayoutY(parentBounds.getMaxY() + 1);
+                    this.targetParent = potentialParent;
+
+                    if (!potentialParent.children.contains(this)) {
+                        potentialParent.children.add(this);
+
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
     public void handleMouseReleased() {
         Workspace workspace = (Workspace) this.getParent();
         if (workspace != null && workspace.isOverTrash(this.getBoundsInParent())) {
