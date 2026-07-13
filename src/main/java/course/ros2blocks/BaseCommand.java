@@ -17,7 +17,9 @@ public class BaseCommand extends RobotCommand {
     }
 
     @Override
-    public String getDisplayName() { return method + " (" + value + ")"; }
+    public String getDisplayName() {
+        return method;
+    }
 
     @Override
     public double getValue() {
