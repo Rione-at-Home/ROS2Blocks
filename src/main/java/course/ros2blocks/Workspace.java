@@ -76,4 +76,27 @@ public class Workspace extends Pane {
             buildScriptChain(child, sb);
         }
     }
+
+    public DraggableBlock findBottomMostBlock() {
+        // Locate an open space (bottomMost) block
+
+        DraggableBlock startNode = null;
+
+        for (var node : this.getChildren()) {
+            if (node instanceof DraggableBlock block && block.getCommand() instanceof StartBlockCommand) {
+                startNode = block;
+                break;
+            }
+        }
+
+        if (startNode == null) return null;
+
+        DraggableBlock current = startNode;
+        while (!current.getSnapChildren().isEmpty()) {
+            current = current.getSnapChildren().get(0);
+
+        }
+
+        return current;
+    }
 }
