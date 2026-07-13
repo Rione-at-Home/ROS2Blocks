@@ -11,57 +11,53 @@ public class DraggableBlock extends HBox {
     private final RobotCommand command;
     private TextField inputField;
 
-    // Snapping hierarchy
     private DraggableBlock targetParent = null;
     private final List<DraggableBlock> children = new ArrayList<>();
 
     private double mouseAnchorX;
     private double mouseAnchorY;
+    private final boolean isPaletteTemplate;
 
-    public DraggableBlock(RobotCommand command) {
+    public DraggableBlock(RobotCommand command, boolean isPaletteTemplate) {
         this.command = command;
+        this.isPaletteTemplate = isPaletteTemplate;
 
-        // Puzzle piece to allow blocks to snap onto each other
-        String color = (command instanceof StartBlockCommand) ? "#4C97FF" :
-                (command instanceof BaseCommand) ? "#5CB1D6" : "#9966FF";
+        // Block Category colors
+        String color = (command instanceof StartBlockCommand) ? "#4C97FF" : // Event Blue
+                (command instanceof BaseCommand) ? "#4a90e2" : "#9966FF"; // Motion Blue / Arm Purple
 
         this.setStyle("-fx-background-color: " + color + "; " +
-                "-fx-padding: 10 20 10 20; " +
-                "-fx-background-radius: 8 8 8 8; " +
-                "-fx-border-color: #333333; " +
-                "-fx-border-radius: 8 8 8 8; " +
-                "-fx-border-width: 1.5;");
+                "-fx-padding: 8 15 8 15; " +
+                "-fx-background-radius: 10 10 10 10; " +
+                "-fx-border-color: java.lang.Math.max(0,1) == 1 ? " + color + " : #333333; " +
+                "-fx-border-width: 1; " +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 3, 0, 0, 2);");
 
-        this.setPrefHeight(45);
-        this.setMaxHeight(45);
+        this.setPrefHeight(40);
+        this.setMaxHeight(40);
 
-        this.getChildren().add(new Label(command.getDisplayName()));
+        Label label = new Label(command.getDisplayName());
+        label.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-family: 'Arial';");
+        this.getChildren().add(label);
 
         if (command instanceof BaseCommand && !(command.getDisplayName().contains("wait"))) {
-
             inputField = new TextField(String.valueOf(((BaseCommand) command).getValue()));
-            inputField.setPrefWidth(50);
-
-            inputField.setStyle("-fx-background-radius: 4; -fx-padding: 2;");
+            inputField.setPrefWidth(45);
+            inputField.setStyle("-fx-background-radius: 5; -fx-padding: 2; -fx-border-width: 0;");
             this.getChildren().add(inputField);
-
         }
 
-        if (!(command instanceof StartBlockCommand)) {
-
-            initDragAndDrop();
-
-        }
+        initDragAndDrop();
     }
 
     private void initDragAndDrop() {
 
+        // Event: if Block clicked from palette
         this.setOnMousePressed(event -> {
             mouseAnchorX = event.getX();
             mouseAnchorY = event.getY();
             this.toFront();
 
-            // Detach if previously snapped
             if (targetParent != null) {
                 targetParent.children.remove(this);
                 targetParent = null;
@@ -69,7 +65,20 @@ public class DraggableBlock extends HBox {
             }
         });
 
+        // Event: if Block dragged from palette into workspace
         this.setOnMouseDragged(event -> {
+            if (isPaletteTemplate) {
+                Workspace workspace = (Workspace) this.getScene().lookup("#workspace");
+                if (workspace != null) {
+                    double sceneX = event.getSceneX();
+                    double sceneY = event.getSceneY();
+                    Bounds wsBounds = workspace.localToScene(workspace.getBoundsInLocal());
+
+                    DraggableBlock clone = workspace.spawnCommandAt(command, sceneX - wsBounds.getMinX() - mouseAnchorX, sceneY - wsBounds.getMinY() - mouseAnchorY);
+                    event.consume();
+                }
+                return;
+            }
 
             double newX = this.getLayoutX() + event.getX() - mouseAnchorX;
             double newY = this.getLayoutY() + event.getY() - mouseAnchorY;
@@ -77,59 +86,29 @@ public class DraggableBlock extends HBox {
             this.setLayoutX(newX);
             this.setLayoutY(newY);
 
-            // Move child blocks dynamically with the drag sequence
             moveChildren(event.getX() - mouseAnchorX, event.getY() - mouseAnchorY);
+            checkSnapOrTrash();
 
-            checkSnapOpportunity();
         });
     }
 
     private void moveChildren(double deltaX, double deltaY) {
 
         for (DraggableBlock child : children) {
-
             child.setLayoutX(child.getLayoutX() + deltaX);
             child.setLayoutY(child.getLayoutY() + deltaY);
-
             child.moveChildren(deltaX, deltaY);
 
         }
     }
 
-    private void checkSnapOpportunity() {
 
+
+    // Handle dropping sequence
+    public void handleMouseReleased() {
         Workspace workspace = (Workspace) this.getParent();
-        if (workspace == null) return;
-
-        double snapThreshold = 30.0;
-
-        for (var node : workspace.getChildren()) {
-
-            if (node instanceof DraggableBlock && node != this && !this.children.contains(node)) {
-
-                DraggableBlock potentialParent = (DraggableBlock) node;
-
-                Bounds parentBounds = potentialParent.getBoundsInParent();
-                Bounds myBounds = this.getBoundsInParent();
-
-                // Check proximity to bottom edge of target parent
-                double distanceX = Math.abs(myBounds.getMinX() - parentBounds.getMinX());
-                double distanceY = Math.abs(myBounds.getMinY() - parentBounds.getMaxY());
-
-                if (distanceX < snapThreshold && distanceY < snapThreshold) {
-                    // Snapping action execution
-                    this.setLayoutX(parentBounds.getMinX());
-                    this.setLayoutY(parentBounds.getMaxY() + 2); // 2px margin padding
-
-                    this.targetParent = potentialParent;
-
-                    if (!potentialParent.children.contains(this)) {
-                        potentialParent.children.add(this);
-
-                    }
-                    break;
-                }
-            }
+        if (workspace != null && workspace.isOverTrash(this.getBoundsInParent())) {
+            workspace.removeBlockChain(this);
         }
     }
 
