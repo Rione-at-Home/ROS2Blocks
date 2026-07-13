@@ -1,47 +1,58 @@
 package course.ros2blocks;
 
-import javafx.scene.input.TransferMode;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.Pane;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Workspace extends VBox {
-    private final List<RobotCommand> script = new ArrayList<>();
+public class Workspace extends Pane {
 
     public Workspace() {
-        this.setStyle("-fx-border-color: gray; -fx-border-width: 2;");
 
-        this.setOnDragOver(event -> {
-            if (event.getGestureSource() != this) {
-                event.acceptTransferModes(TransferMode.MOVE);
-            }
-            event.consume();
-        });
+        this.setStyle("-fx-background-color: #F9F9F9; -fx-border-color: #E5E5E5; -fx-border-width: 2;");
 
-        this.setOnDragDropped(event -> {
-            // Logic to instantiate the block based on the dropped type
-            // Add to workspace list
-            event.setDropCompleted(true);
-            event.consume();
-        });
+        DraggableBlock startBlock = new DraggableBlock(new StartBlockCommand());
+        startBlock.setLayoutX(150);
+        startBlock.setLayoutY(50);
+        this.getChildren().add(startBlock);
     }
 
     public void addCommand(RobotCommand cmd) {
-        script.add(cmd);
-        this.getChildren().add(new DraggableBlock(cmd));
 
+        DraggableBlock newBlock = new DraggableBlock(cmd);
+
+        newBlock.setLayoutX(400);
+        newBlock.setLayoutY(50);
+        this.getChildren().add(newBlock);
     }
-
 
     public String exportToPython() {
         StringBuilder sb = new StringBuilder();
+        DraggableBlock startNode = null;
 
-        for (RobotCommand cmd : script) {
-            sb.append(cmd.getPythonCommand()).append("\n");
+        for (var node : this.getChildren()) {
+            if (node instanceof DraggableBlock block && block.getCommand() instanceof StartBlockCommand) {
+
+                startNode = block;
+
+                break;
+
+            }
+        }
+
+        if (startNode != null) {
+            buildScriptChain(startNode, sb);
 
         }
 
         return sb.toString();
+    }
 
+    private void buildScriptChain(DraggableBlock current, StringBuilder sb) {
+        sb.append(current.getCommand().getPythonCommand()).append("\n");
+
+        for (DraggableBlock child : current.getSnapChildren()) {
+
+            buildScriptChain(child, sb);
+        }
     }
 }
