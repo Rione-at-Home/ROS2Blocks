@@ -6,5 +6,5 @@ public abstract class RobotCommand {
 
     public abstract String getDisplayName();
 
-    public abstract char[] getValue();
+    public abstract double getValue();
 }
