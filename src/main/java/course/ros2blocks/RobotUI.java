@@ -16,8 +16,23 @@ public class RobotUI extends Application {
 
         // Palette
         VBox palette = new VBox(10);
+
+        // Base Commands
         Button btnForward = new Button("Forward (1.62m)");
         btnForward.setOnAction(e -> workspace.addCommand(new BaseCommand("forward", 1.62)));
+
+        Button btnBackward = new Button("Backward (1.62m");
+        btnBackward.setOnAction(e -> workspace.addCommand(new BaseCommand("backward", 1.62)));
+
+        Button btnLeft = new Button("Left (30)");
+        btnLeft.setOnAction(e -> workspace.addCommand(new BaseCommand("left", 30)));
+
+        Button btnRight = new Button("Right(30)");
+        btnRight.setOnAction(e -> workspace.addCommand(new BaseCommand("right", 30)));
+
+        Button btnWait = new Button("Wait(5)");
+        btnWait.setOnAction(e -> workspace.addCommand(new BaseCommand("wait", 5)));
+
 
         Button btnPick = new Button("Pick Can");
         btnPick.setOnAction(e -> workspace.addCommand(new ArmCommand("pick_can")));
