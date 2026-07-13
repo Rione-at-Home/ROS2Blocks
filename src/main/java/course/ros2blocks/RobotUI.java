@@ -1,9 +1,11 @@
 package course.ros2blocks;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 
@@ -14,65 +16,46 @@ public class RobotUI extends Application {
         BorderPane root = new BorderPane();
         Workspace workspace = new Workspace();
 
-        // Palette
-        VBox palette = new VBox(10);
+        // TOP CONTROL BAR (With Execution Green Flag Button)
+        HBox topBar = new HBox(15);
+        topBar.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 10; -fx-border-color: #E5E5E5; -fx-border-width: 0 0 1 0;");
 
-        // Base Commands
-        Button btnForward = new Button("Forward (1.62m)");
-        btnForward.setOnAction(e -> workspace.addCommand(new BaseCommand("forward", 1.62)));
+        Button btnRunFlag = new Button("🟢 Run Script");
+        btnRunFlag.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;");
+        btnRunFlag.setOnAction(e -> {
+            System.out.println("--- Executing Script Chain ---");
+            System.out.println(workspace.exportToPython());
+        });
 
-        Button btnBackward = new Button("Backward (1.62m");
-        btnBackward.setOnAction(e -> workspace.addCommand(new BaseCommand("backward", 1.62)));
+        topBar.getChildren().add(btnRunFlag);
+        root.setTop(topBar);
 
-        Button btnLeft = new Button("Left (30)");
-        btnLeft.setOnAction(e -> workspace.addCommand(new BaseCommand("left", 30)));
+        // PALETTE CONTAINER (Left Distinct Workspace Sidebar)
+        VBox palette = new VBox(12);
+        palette.setPadding(new Insets(15));
 
-        Button btnRight = new Button("Right(30)");
-        btnRight.setOnAction(e -> workspace.addCommand(new BaseCommand("right", 30)));
+        palette.setStyle("-fx-background-color: #2A2E3D; -fx-min-width: 220; -fx-max-width: 220;");
 
-        Button btnWait = new Button("Wait(5)");
-        btnWait.setOnAction(e -> workspace.addCommand(new BaseCommand("wait", 5)));
-
-
-        // Arm Commands
-        Button btnHome = new Button("Home");
-        btnHome.setOnAction(e -> workspace.addCommand(new ArmCommand("home")));
-
-        Button btnPick = new Button("Pick Can");
-        btnPick.setOnAction(e -> workspace.addCommand(new ArmCommand("pick_can")));
-
-        Button btnLift = new Button("Lift");
-        btnLift.setOnAction(e -> workspace.addCommand(new ArmCommand("lift")));
-
-        Button btnPlaceLeft = new Button("Place Left");
-        btnPlaceLeft.setOnAction(e -> workspace.addCommand(new ArmCommand("place_left")));
-
-        Button btnPlaceRight = new Button("Place Right");
-        btnPlaceRight.setOnAction(e -> workspace.addCommand(new ArmCommand("place_right")));
-
-        Button btnCatapult= new Button("Catapult");
-        btnCatapult.setOnAction(e -> workspace.addCommand(new ArmCommand("catapult")));
-
+        // Populate items directly as authentic rendered Block shapes rather than buttons
         palette.getChildren().addAll(
-                // Base commands
-                btnForward,
-                btnBackward,
-                btnLeft,
-                btnRight,
-                btnWait,
+                new DraggableBlock(new BaseCommand("forward", 1.62), true),
+                new DraggableBlock(new BaseCommand("backward", 1.62), true),
+                new DraggableBlock(new BaseCommand("left", 30), true),
+                new DraggableBlock(new BaseCommand("right", 30), true),
+                new DraggableBlock(new BaseCommand("wait", 5), true),
 
-                // Arm commands
-                btnHome,
-                btnPick,
-                btnLift,
-                btnPlaceLeft,
-                btnPlaceRight,
-                btnCatapult);
+                new DraggableBlock(new ArmCommand("home"), true),
+                new DraggableBlock(new ArmCommand("pick_can"), true),
+                new DraggableBlock(new ArmCommand("lift"), true),
+                new DraggableBlock(new ArmCommand("place_left"), true),
+                new DraggableBlock(new ArmCommand("place_right"), true),
+                new DraggableBlock(new ArmCommand("catapult"), true)
+        );
 
         root.setLeft(palette);
         root.setCenter(workspace);
 
-        primaryStage.setScene(new Scene(root, 800, 600));
+        primaryStage.setScene(new Scene(root, 950, 650));
         primaryStage.setTitle("Ri-One@Home Scratch UI");
         primaryStage.show();
     }
