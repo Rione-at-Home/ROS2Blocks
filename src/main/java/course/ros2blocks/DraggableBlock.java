@@ -18,18 +18,20 @@ public class DraggableBlock extends HBox {
     private double mouseAnchorY;
     private final boolean isPaletteTemplate;
 
+
+    private DraggableBlock activeClone = null; // Purpose is to handle Ghos versions
+
     public DraggableBlock(RobotCommand command, boolean isPaletteTemplate) {
         this.command = command;
         this.isPaletteTemplate = isPaletteTemplate;
 
-        // Block Category colors
-        String color = (command instanceof StartBlockCommand) ? "#4C97FF" : // Event Blue
-                (command instanceof BaseCommand) ? "#4a90e2" : "#9966FF"; // Motion Blue / Arm Purple
+        String color = (command instanceof StartBlockCommand) ? "#4C97FF" :
+                (command instanceof BaseCommand) ? "#4a90e2" : "#9966FF";
 
         this.setStyle("-fx-background-color: " + color + "; " +
                 "-fx-padding: 8 15 8 15; " +
                 "-fx-background-radius: 10 10 10 10; " +
-                "-fx-border-color: java.lang.Math.max(0,1) == 1 ? " + color + " : #333333; " +
+                "-fx-border-color: " + color + "; " +
                 "-fx-border-width: 1; " +
                 "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 3, 0, 0, 2);");
 
@@ -52,29 +54,73 @@ public class DraggableBlock extends HBox {
 
     private void initDragAndDrop() {
 
-        // Event: if Block clicked from palette
-        this.setOnMousePressed(event -> {
-            mouseAnchorX = event.getX();
-            mouseAnchorY = event.getY();
-            this.toFront();
+        // Handle clicking palette blocks to spawn and snap them automatically
+        this.setOnMouseClicked(event -> {
+            if (isPaletteTemplate && event.isStillSincePress()) {
+                Workspace workspace = (Workspace) this.getScene().lookup("#workspace");
+                if (workspace != null) {
+                    // Find the bottom-most block in the active script chain
+                    DraggableBlock bottomBlock = workspace.findBottomMostBlock();
 
-            if (targetParent != null) {
-                targetParent.children.remove(this);
-                targetParent = null;
+                    double spawnX;
+                    double spawnY;
 
+                    if (bottomBlock != null) {
+
+                        Bounds bounds = bottomBlock.getBoundsInParent();
+                        spawnX = bounds.getMinX();
+                        spawnY = bounds.getMaxY() + 1;
+
+                    } else {
+                        spawnX = 350;
+                        spawnY = 100;
+
+                    }
+
+                    DraggableBlock spawned = workspace.spawnCommandAt(command, spawnX, spawnY);
+
+                    if (bottomBlock != null) {
+                        spawned.checkSnapOrTrash();
+                    }
+                }
+                event.consume();
             }
         });
 
-        // Event: if Block dragged from palette into workspace
+        this.setOnMousePressed(event -> {
+            mouseAnchorX = event.getX();
+            mouseAnchorY = event.getY();
+
+            if (!isPaletteTemplate) {
+                this.toFront();
+                if (targetParent != null) {
+                    targetParent.children.remove(this);
+                    targetParent = null;
+                }
+            }
+        });
+
         this.setOnMouseDragged(event -> {
             if (isPaletteTemplate) {
                 Workspace workspace = (Workspace) this.getScene().lookup("#workspace");
+
                 if (workspace != null) {
                     double sceneX = event.getSceneX();
                     double sceneY = event.getSceneY();
                     Bounds wsBounds = workspace.localToScene(workspace.getBoundsInLocal());
 
-                    DraggableBlock clone = workspace.spawnCommandAt(command, sceneX - wsBounds.getMinX() - mouseAnchorX, sceneY - wsBounds.getMinY() - mouseAnchorY);
+                    double spawnX = sceneX - wsBounds.getMinX() - mouseAnchorX;
+                    double spawnY = sceneY - wsBounds.getMinY() - mouseAnchorY;
+
+                    if (activeClone == null) {
+                        activeClone = workspace.spawnCommandAt(command, spawnX, spawnY);
+
+                    } else {
+                        activeClone.setLayoutX(spawnX);
+                        activeClone.setLayoutY(spawnY);
+                        activeClone.checkSnapOrTrash();
+
+                    }
                     event.consume();
                 }
                 return;
@@ -88,7 +134,13 @@ public class DraggableBlock extends HBox {
 
             moveChildren(event.getX() - mouseAnchorX, event.getY() - mouseAnchorY);
             checkSnapOrTrash();
+        });
 
+        this.setOnMouseReleased(event -> {
+            if (isPaletteTemplate && activeClone != null) {
+                activeClone.handleMouseReleased();
+                activeClone = null;
+            }
         });
     }
 
@@ -102,12 +154,11 @@ public class DraggableBlock extends HBox {
         }
     }
 
-    private void checkSnapOrTrash() {
-
+    public void checkSnapOrTrash() {
         Workspace workspace = (Workspace) this.getParent();
+
         if (workspace == null) return;
 
-        // Trash Can Collision Zone Check
         Bounds myBounds = this.getBoundsInParent();
 
         if (workspace.isOverTrash(myBounds)) {
@@ -120,9 +171,11 @@ public class DraggableBlock extends HBox {
         }
 
         double snapThreshold = 35.0;
+
         for (var node : workspace.getChildren()) {
 
             if (node instanceof DraggableBlock && node != this && !this.children.contains(node)) {
+
                 DraggableBlock potentialParent = (DraggableBlock) node;
                 Bounds parentBounds = potentialParent.getBoundsInParent();
 
@@ -130,13 +183,13 @@ public class DraggableBlock extends HBox {
                 double distanceY = Math.abs(myBounds.getMinY() - parentBounds.getMaxY());
 
                 if (distanceX < snapThreshold && distanceY < snapThreshold) {
+
                     this.setLayoutX(parentBounds.getMinX());
                     this.setLayoutY(parentBounds.getMaxY() + 1);
                     this.targetParent = potentialParent;
 
                     if (!potentialParent.children.contains(this)) {
                         potentialParent.children.add(this);
-
                     }
 
                     break;
