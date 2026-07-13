@@ -53,7 +53,21 @@ public class RobotUI extends Application {
         Button btnCatapult= new Button("Catapult");
         btnCatapult.setOnAction(e -> workspace.addCommand(new ArmCommand("catapult")));
 
-        palette.getChildren().addAll(btnForward, btnPick);
+        palette.getChildren().addAll(
+                // Base commands
+                btnForward,
+                btnBackward,
+                btnLeft,
+                btnRight,
+                btnWait,
+
+                // Arm commands
+                btnHome,
+                btnPick,
+                btnLift,
+                btnPlaceLeft,
+                btnPlaceRight,
+                btnCatapult);
 
         root.setLeft(palette);
         root.setCenter(workspace);
