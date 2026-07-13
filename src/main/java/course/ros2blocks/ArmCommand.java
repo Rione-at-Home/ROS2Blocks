@@ -15,10 +15,14 @@ public class ArmCommand extends RobotCommand {
     }
 
     @Override
-    public String getDisplayName() { return method; }
+    public String getDisplayName() {
+        return method;
+    }
 
     @Override
-    public char[] getValue() {
-        return new char[0];
+    public double getValue() {
+        return 0;
     }
+
+
 }
